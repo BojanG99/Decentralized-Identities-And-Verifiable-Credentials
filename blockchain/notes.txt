@@ -1,0 +1,7 @@
+istall node and npm
+npx hardhat
+npx hardhat compile
+npx hardhat test
+npm install dotenv
+
+ npx hardhat run .\scripts\deploy.js --network sepolia
