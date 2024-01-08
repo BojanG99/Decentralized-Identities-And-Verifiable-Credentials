@@ -13,27 +13,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Change to blockchain directory
-        run: cd ./blockchain
-
-      - name: echo pwd
-        run: |
-          pwd       
-
-      - name: echo ls
-        run: |
-          ls               
-
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 16
 
-      - name: Install dependencies
-        run: npm install
+      - name: Change to blockchain directory
+        run: | 
+          cd ./blockchain
+          npm install
 
       - name: Compile contracts
-        run: npx hardhat compile
+        run: |
+          cd ./blockchain
+          npx hardhat compile
 
       - name: Run Hardhat tests
-        run: npx hardhat test
+        run: |
+          cd ./blockchain
+          npx hardhat test
