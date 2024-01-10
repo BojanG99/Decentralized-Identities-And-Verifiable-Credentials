@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import "./VC_Storage.sol";
 
 error VCStorageIsSet();
+error NotVCStorageAddress();
 
 contract SingleDecentralizedIdentityContract {
     string private did_document_cid;
@@ -11,7 +12,7 @@ contract SingleDecentralizedIdentityContract {
     bool private is_revoked;
     address private owner;
 
-    address public vc_storage;
+    address public vc_storage = 0x0000000000000000000000000000000000000000;
     bool private vcstorageSet = false;
 
     //   event DIDChanged(address indexed owner, string name, string did_cid, bool is_revoked);
@@ -41,7 +42,11 @@ contract SingleDecentralizedIdentityContract {
     }
 
     function setVCStorage(address vc_storage_address) external onlyOnce {
-        vc_storage = vc_storage_address;
+        if (isAddressOfVCStorageContract(vc_storage_address)) {
+            vc_storage = vc_storage_address;
+        } else {
+            revert NotVCStorageAddress();
+        }
     }
 
     function createVCStorage() external onlyOnce {
@@ -50,7 +55,7 @@ contract SingleDecentralizedIdentityContract {
 
     function setNewDIDDocument(
         string memory _did_document_cid
-    ) public onlyOwner {
+    ) external onlyOwner {
         //     emit DIDChanged(owner, name, did_document_cid, is_revoked);
         did_document_cid = _did_document_cid;
         version = version + 1;
@@ -65,9 +70,9 @@ contract SingleDecentralizedIdentityContract {
         return (did_document_cid, version, is_revoked);
     }
 
-    function isAddressOfContractA(
+    function isAddressOfVCStorageContract(
         address _addressToCheck
-    ) public pure returns (bool) {
+    ) internal pure returns (bool) {
         try VCStorageContract(_addressToCheck).testForAddress() returns (
             uint256
         ) {

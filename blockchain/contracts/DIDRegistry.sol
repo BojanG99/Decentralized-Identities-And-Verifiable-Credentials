@@ -8,20 +8,20 @@ error NameIsUsed();
 error NoIdentityWithPrefix();
 
 contract DIDRegistryContract {
-    mapping(string => address) identities;
-    mapping(string => bool) used_names;
+    mapping(string => address) public identities;
+    mapping(string => bool) public used_names;
     mapping(string => address) owners;
 
     function addNewIdentity(
         string memory prefix_name,
-        address did_document_address
+        address did_document_contract_address
     ) external {
         if (used_names[prefix_name]) {
             revert NameIsUsed();
         }
 
         owners[prefix_name] = msg.sender;
-        identities[prefix_name] = did_document_address;
+        identities[prefix_name] = did_document_contract_address;
         used_names[prefix_name] = true;
     }
 
@@ -49,13 +49,13 @@ contract DIDRegistryContract {
 
     function changeIdentity(
         string memory prefix_name,
-        address did_document_address
+        address did_document_contract_address
     ) external {
         if (owners[prefix_name] != msg.sender) {
             revert NotTheOwner();
         }
 
-        identities[prefix_name] = did_document_address;
+        identities[prefix_name] = did_document_contract_address;
     }
 
     /*
