@@ -8,6 +8,9 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: blockchain
 
     steps:
       - name: Checkout repository
@@ -20,12 +23,10 @@ jobs:
         with:
           node-version: '16'
 
-      - name: Change to blockchain directory
+      - name: Install dependencies
         run: | 
-          cd ./blockchain
           npm install
 
       - name: Run Hardhat tests
         run: |
-          cd ./blockchain
           npx hardhat test

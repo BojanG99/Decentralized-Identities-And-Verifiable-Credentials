@@ -10,7 +10,7 @@ error NoIdentityWithPrefix();
 contract DIDRegistryContract {
     mapping(string => address) public identities;
     mapping(string => bool) public used_names;
-    mapping(string => address) owners;
+    mapping(string => address) public owners;
 
     function addNewIdentity(
         string memory prefix_name,

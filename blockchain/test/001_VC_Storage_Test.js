@@ -230,9 +230,84 @@ describe("VCStorageContract", function () {
 
       throw new Error("Expected error didn't occure.");
     });
+
+    it("Should not revoke nonrevocable vc", async function () {
+      const { vc_storage_contract, owner, otherAccount } = await loadFixture(
+        deployAsUser
+      );
+      const vc_hash = "myTestHash";
+      const is_revocable = false;
+      const ipfs_vc_hash = "cidtocryptedvc";
+      const hashed_password = "hashedpassword";
+
+      await vc_storage_contract.issueNewCredential(
+        vc_hash,
+        is_revocable,
+        ipfs_vc_hash,
+        hashed_password
+      );
+
+      try {
+        await vc_storage_contract.revokeCredential(vc_hash);
+      } catch (error) {
+        expect(error.message.includes("UnrevocableVC")).to.equal(true);
+        return;
+      }
+
+      throw new Error("Expected error didn't occure.");
+    });
   });
 
-  describe("Revoking Verifiable Credentials", function () {
+  describe("Getting Verifiable Credentials", function () {
+    it("Should get correct status of vc", async function () {
+      const { vc_storage_contract, owner, otherAccount } = await loadFixture(
+        deployAsUser
+      );
+      const vc_hash = "myTestHash";
+      const is_revocable = true;
+      const ipfs_vc_hash = "cidtocryptedvc";
+      const hashed_password = "hashedpassword";
+
+      await vc_storage_contract.issueNewCredential(
+        vc_hash,
+        is_revocable,
+        ipfs_vc_hash,
+        hashed_password
+      );
+
+      expect(await vc_storage_contract.isRevoked(vc_hash)).to.equal(false);
+
+      await vc_storage_contract.revokeCredential(vc_hash);
+
+      expect(await vc_storage_contract.isRevoked(vc_hash)).to.equal(true);
+    });
+    it("Should be reverted if vc_hash is not in the vc storage", async function () {
+      const { vc_storage_contract, owner, otherAccount } = await loadFixture(
+        deployAsUser
+      );
+      const vc_hash = "myTestHash";
+      const is_revocable = true;
+      const ipfs_vc_hash = "cidtocryptedvc";
+      const hashed_password = "hashedpassword";
+
+      await vc_storage_contract.issueNewCredential(
+        vc_hash,
+        is_revocable,
+        ipfs_vc_hash,
+        hashed_password
+      );
+      const _vc_hash = "none";
+      try {
+        await vc_storage_contract.isRevoked(_vc_hash);
+      } catch (error) {
+        expect(error.message.includes("VCDoesNotExists")).to.equal(true);
+        return;
+      }
+
+      throw new Error("Expected error didn't occure.");
+    });
+  });
+  describe("Test functions", function () {
     it("Should return 1", async function () {
       const { vc_storage_contract, owner, otherAccount } = await loadFixture(
         deployAsUser

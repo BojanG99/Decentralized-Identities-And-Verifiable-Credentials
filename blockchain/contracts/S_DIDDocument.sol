@@ -10,7 +10,7 @@ contract SingleDecentralizedIdentityContract {
     string private did_document_cid;
     uint private version;
     bool private is_revoked;
-    address private owner;
+    address public owner;
 
     address public vc_storage = 0x0000000000000000000000000000000000000000;
     bool private vcstorageSet = false;
@@ -41,7 +41,9 @@ contract SingleDecentralizedIdentityContract {
         //     emit IdentityCreated(msg.sender, _name,did_document_id);
     }
 
-    function setVCStorage(address vc_storage_address) external onlyOnce {
+    function setVCStorage(
+        address vc_storage_address
+    ) external onlyOnce onlyOwner {
         if (isAddressOfVCStorageContract(vc_storage_address)) {
             vc_storage = vc_storage_address;
         } else {
@@ -49,7 +51,7 @@ contract SingleDecentralizedIdentityContract {
         }
     }
 
-    function createVCStorage() external onlyOnce {
+    function createVCStorage() external onlyOnce onlyOwner {
         vc_storage = address(new VCStorageContract(owner));
     }
 
