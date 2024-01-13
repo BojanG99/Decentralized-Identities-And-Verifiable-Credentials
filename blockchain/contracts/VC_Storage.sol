@@ -111,6 +111,25 @@ contract VCStorageContract {
         return vCredentials[_vc_hash].is_revoked;
     }
 
+    //Need tests
+    function getAllVCredentials()
+        external
+        view
+        onlyOwner
+        returns (string[] memory)
+    {
+        return all_VCredentials;
+    }
+
+    //Need tests
+    function isRevocable(string memory _vc_hash) external view returns (bool) {
+        if (is_issued[_vc_hash]) {
+            revert VCDoesNotExists();
+        }
+
+        return vCredentials[_vc_hash].revocable;
+    }
+
     function testForAddress() public pure returns (uint) {
         return 1;
     }
