@@ -1,0 +1,11 @@
+{
+    "issuer":"did:ethipfs:0x0f7773CE819dFDF650a6b646E8d34aF63d5E40C4:ETF-Beograd-BU",
+    "type":["Student Credentials","ETF-Belgrade"],
+    "claims":{
+        "Prosek":"10.00",
+        "BrojEspbPoena":"240",
+        "GodinaStudija":"4"
+    },
+    "expireDate":"2024-12-31"
+
+}

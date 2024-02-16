@@ -1,0 +1,25 @@
+{
+    "keys": [
+        {
+            "id":"did:ethipfs:0x0f7773CE819dFDF650a6b646E8d34aF63d5E40C4:ETF-Beograd-BU#key1",
+            "kty": "OKP",
+            "d": "F8RIt4bahpjXErRP_vnltVZWoF7izJdS_i4jc-nc65M",
+            "use": "enc",
+            "crv": "Ed25519",
+            "kid": "key-15",
+            "x": "YRciUSPk2UJK0CU2-my20TwBP2pOfiFkQwJKiCnO9YY",
+            "alg": "ECDH-ES"
+        },
+        {
+            "id": "did:ethipfs:0x0f7773CE819dFDF650a6b646E8d34aF63d5E40C4:ETF-Beograd-BU#key2",
+            "kty": "OKP",
+            "d": "87cwQLmPfCm3YdTlmUuSwlTsyHGceOvt697BKAkhyzc",
+            "use": "enc",
+            "crv": "Ed25519",
+            "kid": "key-16",
+            "x": "SPRtFNEXNPPvYUpe0u-nXA_EHiYJ2kVZ0KQ2WXmPyPk",
+            "alg": "ECDH-ES"
+        }
+
+    ]
+}

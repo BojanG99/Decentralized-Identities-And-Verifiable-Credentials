@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package usermgmt;
+
+option go_package = "github.com/BojanG99/Decentralized-Identitise-And-Verifiable-Credentials/protobuff;go_usermgmt_grpc";
+
+service UserManagment {
+    rpc CreateNewUser (NewUser) returns (User) {}
+
+}
+
+message NewUser {
+    string name = 1;
+    int32 age = 2;
+}
+
+message User {
+    string name = 1;
+    int32 age = 2;
+    int32 id = 3;
+}
