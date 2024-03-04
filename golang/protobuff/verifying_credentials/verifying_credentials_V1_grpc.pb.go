@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             v4.25.1
-// source: issuing_credentials/issuing_credentials_V1.proto
+// source: verifying_credentials/verifying_credentials_V1.proto
 
 package verifiable_credentials
 
@@ -22,7 +22,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type VerifiableCredentialServiceClient interface {
-	IssueCredential(ctx context.Context, opts ...grpc.CallOption) (VerifiableCredentialService_IssueCredentialClient, error)
+	VerifyCredential(ctx context.Context, opts ...grpc.CallOption) (VerifiableCredentialService_VerifyCredentialClient, error)
 }
 
 type verifiableCredentialServiceClient struct {
@@ -33,30 +33,30 @@ func NewVerifiableCredentialServiceClient(cc grpc.ClientConnInterface) Verifiabl
 	return &verifiableCredentialServiceClient{cc}
 }
 
-func (c *verifiableCredentialServiceClient) IssueCredential(ctx context.Context, opts ...grpc.CallOption) (VerifiableCredentialService_IssueCredentialClient, error) {
-	stream, err := c.cc.NewStream(ctx, &VerifiableCredentialService_ServiceDesc.Streams[0], "/issuing_verifiable_credentials.VerifiableCredentialService/IssueCredential", opts...)
+func (c *verifiableCredentialServiceClient) VerifyCredential(ctx context.Context, opts ...grpc.CallOption) (VerifiableCredentialService_VerifyCredentialClient, error) {
+	stream, err := c.cc.NewStream(ctx, &VerifiableCredentialService_ServiceDesc.Streams[0], "/verifying_verifiable_credentials.VerifiableCredentialService/VerifyCredential", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &verifiableCredentialServiceIssueCredentialClient{stream}
+	x := &verifiableCredentialServiceVerifyCredentialClient{stream}
 	return x, nil
 }
 
-type VerifiableCredentialService_IssueCredentialClient interface {
+type VerifiableCredentialService_VerifyCredentialClient interface {
 	Send(*ClientMessage) error
 	Recv() (*ServerMessage, error)
 	grpc.ClientStream
 }
 
-type verifiableCredentialServiceIssueCredentialClient struct {
+type verifiableCredentialServiceVerifyCredentialClient struct {
 	grpc.ClientStream
 }
 
-func (x *verifiableCredentialServiceIssueCredentialClient) Send(m *ClientMessage) error {
+func (x *verifiableCredentialServiceVerifyCredentialClient) Send(m *ClientMessage) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *verifiableCredentialServiceIssueCredentialClient) Recv() (*ServerMessage, error) {
+func (x *verifiableCredentialServiceVerifyCredentialClient) Recv() (*ServerMessage, error) {
 	m := new(ServerMessage)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -68,7 +68,7 @@ func (x *verifiableCredentialServiceIssueCredentialClient) Recv() (*ServerMessag
 // All implementations must embed UnimplementedVerifiableCredentialServiceServer
 // for forward compatibility
 type VerifiableCredentialServiceServer interface {
-	IssueCredential(VerifiableCredentialService_IssueCredentialServer) error
+	VerifyCredential(VerifiableCredentialService_VerifyCredentialServer) error
 	mustEmbedUnimplementedVerifiableCredentialServiceServer()
 }
 
@@ -76,8 +76,8 @@ type VerifiableCredentialServiceServer interface {
 type UnimplementedVerifiableCredentialServiceServer struct {
 }
 
-func (UnimplementedVerifiableCredentialServiceServer) IssueCredential(VerifiableCredentialService_IssueCredentialServer) error {
-	return status.Errorf(codes.Unimplemented, "method IssueCredential not implemented")
+func (UnimplementedVerifiableCredentialServiceServer) VerifyCredential(VerifiableCredentialService_VerifyCredentialServer) error {
+	return status.Errorf(codes.Unimplemented, "method VerifyCredential not implemented")
 }
 func (UnimplementedVerifiableCredentialServiceServer) mustEmbedUnimplementedVerifiableCredentialServiceServer() {
 }
@@ -93,25 +93,25 @@ func RegisterVerifiableCredentialServiceServer(s grpc.ServiceRegistrar, srv Veri
 	s.RegisterService(&VerifiableCredentialService_ServiceDesc, srv)
 }
 
-func _VerifiableCredentialService_IssueCredential_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(VerifiableCredentialServiceServer).IssueCredential(&verifiableCredentialServiceIssueCredentialServer{stream})
+func _VerifiableCredentialService_VerifyCredential_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(VerifiableCredentialServiceServer).VerifyCredential(&verifiableCredentialServiceVerifyCredentialServer{stream})
 }
 
-type VerifiableCredentialService_IssueCredentialServer interface {
+type VerifiableCredentialService_VerifyCredentialServer interface {
 	Send(*ServerMessage) error
 	Recv() (*ClientMessage, error)
 	grpc.ServerStream
 }
 
-type verifiableCredentialServiceIssueCredentialServer struct {
+type verifiableCredentialServiceVerifyCredentialServer struct {
 	grpc.ServerStream
 }
 
-func (x *verifiableCredentialServiceIssueCredentialServer) Send(m *ServerMessage) error {
+func (x *verifiableCredentialServiceVerifyCredentialServer) Send(m *ServerMessage) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *verifiableCredentialServiceIssueCredentialServer) Recv() (*ClientMessage, error) {
+func (x *verifiableCredentialServiceVerifyCredentialServer) Recv() (*ClientMessage, error) {
 	m := new(ClientMessage)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -123,16 +123,16 @@ func (x *verifiableCredentialServiceIssueCredentialServer) Recv() (*ClientMessag
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var VerifiableCredentialService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "issuing_verifiable_credentials.VerifiableCredentialService",
+	ServiceName: "verifying_verifiable_credentials.VerifiableCredentialService",
 	HandlerType: (*VerifiableCredentialServiceServer)(nil),
 	Methods:     []grpc.MethodDesc{},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "IssueCredential",
-			Handler:       _VerifiableCredentialService_IssueCredential_Handler,
+			StreamName:    "VerifyCredential",
+			Handler:       _VerifiableCredentialService_VerifyCredential_Handler,
 			ServerStreams: true,
 			ClientStreams: true,
 		},
 	},
-	Metadata: "issuing_credentials/issuing_credentials_V1.proto",
+	Metadata: "verifying_credentials/verifying_credentials_V1.proto",
 }

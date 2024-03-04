@@ -37,7 +37,7 @@ func VerifyMessage(payload string, expectedMessage string, key jwk.Key) bool {
 	}
 	stringFromCrv := fmt.Sprintf("%s", crv)
 
-	verified, err := jws.Verify([]byte(payload), jwa.SignatureAlgorithm(string(stringFromCrv)), key)
+	verified, err := jws.Verify([]byte(payload), determineSigningAlgorithm(stringFromCrv), key)
 	if err != nil {
 		log.Printf("failed to verify message: %s", err)
 		return false

@@ -7,12 +7,10 @@ import (
 	"io/ioutil"
 	"log"
 	"net"
-	"strings"
-	"time"
 
 	kripto "github.com/BojanG99/Decentralized-Identitise-And-Verifiable-Credentials/crypto"
 	"github.com/BojanG99/Decentralized-Identitise-And-Verifiable-Credentials/protobuff/helpers"
-	verifiable_credentials "github.com/BojanG99/Decentralized-Identitise-And-Verifiable-Credentials/protobuff/issuing_credentials"
+	verifiable_credentials "github.com/BojanG99/Decentralized-Identitise-And-Verifiable-Credentials/protobuff/verifying_credentials"
 	"github.com/BojanG99/Decentralized-Identitise-And-Verifiable-Credentials/resolver"
 	"github.com/lestrrat-go/jwx/jwk"
 	"google.golang.org/grpc"
@@ -22,81 +20,70 @@ type verifiableCredentialServer struct {
 	verifiable_credentials.VerifiableCredentialServiceServer
 }
 
+var res *resolver.EthipfsResolver
+
 type RpcRequestData struct {
 	rpcKey          string
 	clientChallange string
-	vcData          *VCData
+	//	vcData          *VCData
 	clientDidString string
 	serverChallange string
 }
 
-func (s *verifiableCredentialServer) IssueCredential(stream verifiable_credentials.VerifiableCredentialService_IssueCredentialServer) error {
+func (s *verifiableCredentialServer) VerifyCredential(stream verifiable_credentials.VerifiableCredentialService_VerifyCredentialServer) error {
 
 	var grpcRequestData RpcRequestData
 	//Step1
-	clientMessage, err := stream.Recv()
-	if err != nil {
-		log.Printf("Error receiving client message: %v", err)
-		return err
-	}
+	for {
 
-	switch m := clientMessage.Message.(type) {
-	case *verifiable_credentials.ClientMessage_Ch:
-		err := handleClientHello(stream, m.Ch, &grpcRequestData)
+		clientMessage, err := stream.Recv()
 		if err != nil {
+			log.Printf("Error receiving client message: %v", err)
 			return err
 		}
-	case *verifiable_credentials.ClientMessage_Err:
-		log.Printf("Unsuported client error message: %v\n", m.Err.ErrorMessage)
-		return errors.New(m.Err.ErrorMessage)
-	default:
-		log.Printf("Unsuported server message type: %v\n", m)
-		return errors.New("Unsuported client message. 1. korak")
-	}
 
-	//Step 2
-	clientMessage, err = stream.Recv()
-	if err != nil {
-		log.Printf("Error receiving client message: %v", err)
-		return err
-	}
+		fmt.Println("primljena poruka")
+		fmt.Println(clientMessage)
+		switch m := clientMessage.Message.(type) {
 
-	switch m := clientMessage.Message.(type) {
-	case *verifiable_credentials.ClientMessage_Ca:
-		//err :=
-		handleClientAuthentication(stream, m.Ca, &grpcRequestData)
-		//if err != nil {
-		//	return err
-		//}
-	case *verifiable_credentials.ClientMessage_Err:
-		log.Printf("Unsuported client error message: %v\n", m.Err.ErrorMessage)
-		return errors.New(m.Err.ErrorMessage)
-	default:
-		log.Printf("Unsuported server message type: %v\n", m)
-		return errors.New("Unsuported client message. 2 korak")
-	}
-
-	//step3
-	clientMessage, err = stream.Recv()
-	if err != nil {
-		log.Printf("Error receiving client message: %v", err)
-		return err
-	}
-	switch m := clientMessage.Message.(type) {
-	case *verifiable_credentials.ClientMessage_Cr:
-		handleClientResponse(stream, m.Cr, &grpcRequestData)
-	case *verifiable_credentials.ClientMessage_Err:
-		log.Printf("Unsuported client error message: %v\n", m.Err.ErrorMessage)
-		return errors.New(m.Err.ErrorMessage)
-	default:
-		log.Printf("Unsuported server message type: %v\n", m)
-		return errors.New("Unsuported client message. 3. korak")
+		case *verifiable_credentials.ClientMessage_Ch:
+			err := handleClientHello(stream, m.Ch, &grpcRequestData)
+			if err != nil {
+				return err
+			}
+		case *verifiable_credentials.ClientMessage_Ca:
+			err := handleClientAuthentication(stream, m.Ca, &grpcRequestData)
+			if err != nil {
+				return err
+			}
+		case *verifiable_credentials.ClientMessage_Vcs:
+			err := handleClientVerifiableCredentials(stream, m.Vcs, &grpcRequestData)
+			if err != nil {
+				return err
+			}
+			return nil
+		case *verifiable_credentials.ClientMessage_Vc:
+			err := handleClientVerifiableCredential(stream, m.Vc, &grpcRequestData)
+			if err != nil {
+				return err
+			}
+			return nil
+		case *verifiable_credentials.ClientMessage_Cr:
+			log.Printf("User declined to show vc's")
+			return nil
+		case *verifiable_credentials.ClientMessage_Err:
+			log.Printf("Unsuported client error message: %v\n", m.Err.ErrorMessage)
+			return errors.New(m.Err.ErrorMessage)
+		default:
+			log.Printf("Unsuported server message type: %v\n", m)
+			return errors.New("Unsuported client message.")
+		}
 	}
 
 	return nil
 }
 
-func sendErrorMessage(errorMessage string, stream verifiable_credentials.VerifiableCredentialService_IssueCredentialServer) error {
+func sendErrorMessage(errorMessage string, stream verifiable_credentials.VerifiableCredentialService_VerifyCredentialServer) error {
 	serverMessage := &verifiable_credentials.ServerMessage{
 		Message: &verifiable_credentials.ServerMessage_Err{
 			Err: &verifiable_credentials.Error{
@@ -115,7 +102,7 @@ func sendErrorMessage(errorMessage string, stream verifiable_credentials.Verifia
 
 }
 
-func handleClientHello(stream verifiable_credentials.VerifiableCredentialService_IssueCredentialServer, clientHello *verifiable_credentials.ClientHello, grpcRequestData *RpcRequestData) error {
+func handleClientHello(stream verifiable_credentials.VerifiableCredentialService_VerifyCredentialServer, clientHello *verifiable_credentials.ClientHello, grpcRequestData *RpcRequestData) error {
 
 	didString := clientHello.GetDidString()
 	rpcKey := clientHello.GetRpcKey()
@@ -160,7 +147,7 @@ func handleClientHello(stream verifiable_credentials.VerifiableCredentialService
 	if rpcKey == "" {
 		sendErrorMessage("Invalid rpcKey", stream)
 	}
-	grpcRequestData.vcData = vcData
+	//	grpcRequestData.vcData = vcData
 	grpcRequestData.rpcKey = rpcKey
 	grpcRequestData.clientDidString = didString
 	grpcRequestData.serverChallange = serverChallange
@@ -189,7 +176,7 @@ func handleClientHello(stream verifiable_credentials.VerifiableCredentialService
 	return nil
 }
 
-func handleClientAuthentication(stream verifiable_credentials.VerifiableCredentialService_IssueCredentialServer, clientAuthentication *verifiable_credentials.ClientAuthentication, grpcRequestData *RpcRequestData) error {
+func handleClientAuthentication(stream verifiable_credentials.VerifiableCredentialService_VerifyCredentialServer, clientAuthentication *verifiable_credentials.ClientAuthentication, grpcRequestData *RpcRequestData) error {
 
 	fmt.Println("ClientAuthenticationoooooooooooooo")
 	fmt.Println(*clientAuthentication)
@@ -233,11 +220,9 @@ func handleClientAuthentication(stream verifiable_credentials.VerifiableCredenti
 
 	serverMessage := &verifiable_credentials.ServerMessage{
 		Message: &verifiable_credentials.ServerMessage_Sp{
-			Sp: &verifiable_credentials.ServerClaimsProposal{
-				// Set appropriate fields based on your logic
-				Type:        grpcRequestData.vcData.Type,
-				Description: grpcRequestData.vcData.Description,
-				Claims:      grpcRequestData.vcData.Claims,
+			Sp: &verifiable_credentials.VerifiableCredentialRequest{
+				AcceptableTypes: []string{"Jovan Djordjevic"},
+				AcceptableDIDs:  []string{"did:ethipfs:0x0f7773CE819dFDF650a6b646E8d34aF63d5E40C4:ETF-Beograd-BU"},
 			},
 		},
 	}
@@ -251,98 +236,48 @@ func handleClientAuthentication(stream verifiable_credentials.VerifiableCredenti
 	return nil
 }
 
-func handleClientResponse(stream verifiable_credentials.VerifiableCredentialService_IssueCredentialServer, ClientResponse *verifiable_credentials.ClientResponse, grpcRequestData *RpcRequestData) {
-	fmt.Println(*ClientResponse)
-
-	currentTime := time.Now()
-
-	isAccepting := ClientResponse.AcceptCredentials
-	if !isAccepting {
-		sendErrorMessage("You didn't accept credentials proposal", stream)
-		return
-	}
-	// Add 2 hours and 30 minutes to the current time
-
-	// Format the new time as a string in the desired layout
-	dateString := currentTime.Format("2006-01-02 15:04:05")
-
-	vc := &verifiable_credentials.VerifiableCredential{
-		// Set appropriate fields based on your logic
-		Id:           "dj223052m",
-		Type:         grpcRequestData.vcData.Type,
-		Issuer:       grpcRequestData.vcData.Issuer,
-		Subject:      grpcRequestData.clientDidString,
-		IssuanceDate: dateString,
-		Description:  grpcRequestData.vcData.Description,
-		Claims:       grpcRequestData.vcData.Claims,
-		// Proof: map[string]string{
-		// 	"header":   "1",
-		// 	"signature":   "2",
-		// },
-	}
-
-	jsonString, err := json.Marshal(vc)
-	if err != nil {
-		fmt.Println("Error:", err)
-		return
-	}
-
-	//
-	pKeys := read_keys()
-	ethipfs_resolver := resolver.MakeEthIpfsResolver()
-	issuer_diddocument, err := ethipfs_resolver.ResolveDID(grpcRequestData.vcData.Issuer)
-
-	keyUrl := issuer_diddocument.AssertionMethod[0]
-
-	key, err := ethipfs_resolver.ResolveDIDKey(keyUrl)
-	var signKey jwk.Key
-
-	for _, data := range pKeys {
-		keyId, ok := data["id"]
-		if !ok {
-			continue
-		}
-
-		if keyId == key.ID {
-			jsonString, _ := json.Marshal(data)
-
-			signKey, _ = jwk.ParseKey([]byte(jsonString))
-			break
-		}
-	}
-	//
-	// Print the JSON string
-	fmt.Println("JSON representation of the struct:")
-	fmt.Println(string(jsonString))
-
-	signedMessage, err := kripto.SignMessage(string(jsonString), signKey)
-
-	jwtParts := strings.Split(string(signedMessage), ".")
-	vc.Proof = make(map[string]string)
-	vc.Proof["header"] = jwtParts[0]
-	vc.Proof["signature"] = jwtParts[2]
-	vc.Proof["issuerKeyUrl"] = keyUrl
+func handleClientVerifiableCredentials(stream verifiable_credentials.VerifiableCredentialService_VerifyCredentialServer, clientVCs *verifiable_credentials.VerifiableCredentials, grpcRequestData *RpcRequestData) error {
 
 	serverMessage := &verifiable_credentials.ServerMessage{
-		Message: &verifiable_credentials.ServerMessage_Vc{
-			Vc: vc,
+		Message: &verifiable_credentials.ServerMessage_Sr{
+			Sr: &verifiable_credentials.ServerResponse{
+				// Set appropriate fields based on your logic
+				AcceptCredentials: true,
+			},
 		},
 	}
-
 	fmt.Println(*serverMessage)
 	// Send the response to the client
 	if err := stream.Send(serverMessage); err != nil {
 		log.Printf("Error sending server message: %v", err)
 		//	return err
 	}
+
+	return nil
 }
 
-var res *resolver.EthipfsResolver
+func handleClientVerifiableCredential(stream verifiable_credentials.VerifiableCredentialService_VerifyCredentialServer, clientVC *verifiable_credentials.VerifiableCredential, grpcRequestData *RpcRequestData) error {
+
+	serverMessage := &verifiable_credentials.ServerMessage{
+		Message: &verifiable_credentials.ServerMessage_Sr{
+			Sr: &verifiable_credentials.ServerResponse{
+				// Set appropriate fields based on your logic
+				AcceptCredentials: true,
+			},
+		},
+	}
+	fmt.Println(*serverMessage)
+	// Send the response to the client
+	if err := stream.Send(serverMessage); err != nil {
+		log.Printf("Error sending server message: %v", err)
+		//	return err
+	}
+
+	return nil
+}
 
 func main() {
 
-	res := resolver.MakeEthIpfsResolver()
-	res.ResolveDID("did:ethipfs:0x0f7773CE819dFDF650a6b646E8d34aF63d5E40C4:ETF-Beograd-BU")
 	listen, err := net.Listen("tcp", ":50051")
 	if err != nil {
 		log.Fatalf("Failed to listen: %v", err)
